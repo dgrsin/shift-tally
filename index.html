@@ -1,0 +1,199 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>마감 근무표</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --paper:#fbfaf6; --surface:#ffffff; --ink:#1b1b1f; --muted:#6d6c66; --line:#e4e2d8;
+  --note:#ffe600; --note-ink:#3a3300; --accent:#9a7a00; --focus:#c9a400;
+  --danger:#b3261e;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --paper:#141416; --surface:#1d1d21; --ink:#ececea; --muted:#9a9a94; --line:#2f2f34;
+    --note:#f2d600; --note-ink:#2a2500; --accent:#e5c542; --focus:#e5c542; --danger:#ff6b60;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --paper:#141416; --surface:#1d1d21; --ink:#ececea; --muted:#9a9a94; --line:#2f2f34;
+  --note:#f2d600; --note-ink:#2a2500; --accent:#e5c542; --focus:#e5c542; --danger:#ff6b60;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.5 "IBM Plex Sans KR","Apple SD Gothic Neo","Noto Sans KR",system-ui,sans-serif}
+.wrap{max-width:1100px;margin:0 auto;padding-block:28px 48px;padding-inline:16px}
+header{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 16px;margin-bottom:20px}
+h1{font-size:22px;font-weight:600;margin:0;letter-spacing:-.01em}
+h1 small{font-weight:400;color:var(--muted);font-size:14px;margin-left:8px}
+.opts{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;font-size:13px;color:var(--muted)}
+.opts label{display:flex;align-items:center;gap:6px}
+select{font:inherit;font-size:13px;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:4px 8px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media (max-width:760px){.grid{grid-template-columns:1fr}textarea{min-height:240px;font-size:16px}pre.out{min-height:200px}.wrap{padding-block:16px 40px}}
+.panel{display:flex;flex-direction:column;gap:10px;min-width:0}
+.panel-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:500}
+textarea{width:100%;min-height:420px;resize:vertical;font:14px/1.55 "IBM Plex Mono",ui-monospace,Menlo,monospace;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px}
+textarea:focus,select:focus,input:focus,button:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
+pre.out{margin:0;min-height:420px;white-space:pre;overflow-x:auto;font:14px/1.55 "IBM Plex Mono",ui-monospace,Menlo,monospace;background:var(--note);color:var(--note-ink);border-radius:8px;padding:16px 18px;font-variant-numeric:tabular-nums}
+pre.out:empty::before{content:"왼쪽에 마감 메시지를 붙여넣으면 여기에 정리됩니다.";opacity:.6;white-space:normal}
+button{font:inherit;font-size:13px;font-weight:500;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:6px 12px;cursor:pointer}
+button.primary{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.btns{display:flex;gap:6px}
+.hint{font-size:12.5px;color:var(--muted);margin:0}
+.hint code{font-family:"IBM Plex Mono",monospace;font-size:12px;background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:0 4px}
+.warn{color:var(--danger);font-size:12.5px;margin:0;white-space:pre-line}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:8px 14px;border-radius:6px;font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.show{opacity:1}
+@media (prefers-reduced-motion:reduce){.toast{transition:none}}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>마감 근무표 <small>알바 근무시간 정리·합산</small></h1>
+    <div class="opts">
+      <label for="round">시간 계산
+        <select id="round">
+          <option value="exact">정확히 (소수 2자리)</option>
+          <option value="half">30분 단위 반올림</option>
+          <option value="halfdown">30분 단위 버림</option>
+          <option value="tenth">6분(0.1h) 단위</option>
+        </select>
+      </label>
+    </div>
+  </header>
+
+  <div class="grid">
+    <section class="panel">
+      <div class="panel-head">
+        <span class="eyebrow">마감 메시지 붙여넣기</span>
+        <div class="btns"><button id="clear" type="button">비우기</button></div>
+      </div>
+      <textarea id="src" spellcheck="false" placeholder="🍄 09/19 토 마감 🍄&#10;&#10;하영 승우 건호 21:30 출근&#10;현재 재정 채연 22:00 출근&#10;&#10;마감시간 05:10&#10;퇴근시간 06:00"></textarea>
+      <p class="hint">매일 메시지를 그대로 이어서 붙여넣으면 됩니다. 날짜 줄(<code>09/19 토 마감</code>)마다 하루로 나뉘고, <code>이름 … HH:MM 출근</code>이 출근, <code>퇴근시간 HH:MM</code>이 그날 전원 퇴근입니다. 특정 사람만 다르면 <code>하영 05:30 퇴근</code>처럼 한 줄 추가하세요. 입력은 이 브라우저에 자동 저장됩니다.</p>
+      <p class="warn" id="warn"></p>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <span class="eyebrow">정리 결과</span>
+        <div class="btns"><button id="copy" type="button" class="primary">복사</button></div>
+      </div>
+      <pre class="out" id="out"></pre>
+    </section>
+  </div>
+
+</div>
+<div class="toast" id="toast">복사됨</div>
+
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+  const src=$('src'), out=$('out'), warn=$('warn'), round=$('round');
+  const DAYS='일월화수목금토';
+  const SAMPLE = `🍄 09/18 금 마감 🍄
+
+하영 승우 21:00 출근
+현재 재정 22:00 출근
+
+마감시간 05:00
+퇴근시간 05:30
+
+🍄 09/19 토 마감 🍄
+
+하영 승우 건호 21:30 출근
+현재 재정 채연 22:00 출근
+
+마감시간 05:10
+퇴근시간 06:00`;
+
+  const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+
+  function parse(text){
+    const days=[]; const warns=[];
+    let cur=null;
+    const dateRe=/(\d{1,2})\s*\/\s*(\d{1,2})\s*([월화수목금토일])?/;
+    const timeRe=/(\d{1,2})\s*:\s*(\d{2})/;
+    text.split(/\r?\n/).forEach((raw,i)=>{
+      const line=raw.replace(/[^\S ]/g,' ').trim();
+      if(!line) return;
+      const hasTime=timeRe.test(line);
+      const d=dateRe.exec(line);
+      if(d && !hasTime){
+        const mm=+d[1], dd=+d[2];
+        let wd=d[3];
+        if(!wd){const y=new Date().getFullYear(); wd=DAYS[new Date(y,mm-1,dd).getDay()];}
+        cur={mm,dd,wd,starts:[],end:null,ends:{},line:i+1};
+        days.push(cur); return;
+      }
+      if(!hasTime) return;
+      if(!cur){warns.push(`${i+1}행: 날짜 줄 앞에 시간이 있어 무시됨 → "${line}"`);return;}
+      const t=timeRe.exec(line); const time=(+t[1])*60+(+t[2]);
+      const names=line.replace(timeRe,' ').split(/\s+/).filter(w=>/^[가-힣]{1,6}$/.test(w) && !/^(출근|퇴근|마감|퇴근시간|마감시간|오픈|시간)$/.test(w));
+      if(/마감\s*시간/.test(line)) return;
+      if(/퇴근/.test(line)){
+        if(names.length){names.forEach(n=>cur.ends[n]=time);} else cur.end=time;
+        return;
+      }
+      if(/출근/.test(line) || names.length){
+        if(!names.length){warns.push(`${i+1}행: 이름을 찾지 못함 → "${line}"`);return;}
+        names.forEach(n=>cur.starts.push({n,time}));
+      }
+    });
+    return {days,warns};
+  }
+
+  function calcHours(start,end,mode){
+    let m=end-start; if(m<=0) m+=24*60;
+    const h=m/60;
+    if(mode==='half') return Math.round(h*2)/2;
+    if(mode==='halfdown') return Math.floor(h*2)/2;
+    if(mode==='tenth') return Math.round(h*10)/10;
+    return Math.round(h*100)/100;
+  }
+  const fmt=n=>String(+n.toFixed(2));
+  const hhmm=m=>String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');
+  const pad2=n=>String(n).padStart(2,'0');
+
+  function build(){
+    const {days,warns}=parse(src.value);
+    const mode=round.value;
+    const order=[]; const byName={};
+    days.forEach(d=>{
+      if(!d.starts.length) return;
+      d.starts.forEach(s=>{
+        const end = d.ends[s.n] ?? d.end;
+        if(end==null){warns.push(`${pad2(d.mm)}/${pad2(d.dd)} ${d.wd}: 퇴근시간이 없어 ${s.n} 제외`);return;}
+        if(!byName[s.n]){byName[s.n]=[];order.push(s.n);}
+        byName[s.n].push({mm:d.mm,dd:d.dd,wd:d.wd,start:s.time,end,h:calcHours(s.time,end,mode)});
+      });
+    });
+    const blocks=[];
+    order.forEach(n=>{
+      const rows=byName[n].sort((a,b)=>a.mm-b.mm||a.dd-b.dd||a.start-b.start);
+      const total=rows.reduce((a,r)=>a+r.h,0);
+      blocks.push(n+'\n'+rows.map(r=>` ${pad2(r.mm)}/${pad2(r.dd)} ${r.wd} ${hhmm(r.start)} - ${hhmm(r.end)} ${fmt(r.h)}`).join('\n')+'\n= '+fmt(total));
+    });
+    out.textContent=blocks.join('\n\n');
+    warn.textContent=warns.join('\n');
+    store.set('shift.src',src.value); store.set('shift.round',mode);
+  }
+
+  let toastT;
+  function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),1500);}
+
+  $('copy').addEventListener('click',()=>{
+    const text=out.textContent; if(!text){toast('복사할 내용이 없습니다');return;}
+    const fallback=()=>{const r=document.createRange();r.selectNodeContents(out);const s=getSelection();s.removeAllRanges();s.addRange(r);toast('선택됨 · ⌘C / Ctrl+C');};
+    if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).then(()=>toast('복사됨')).catch(fallback);} else fallback();
+  });
+  $('clear').addEventListener('click',()=>{src.value='';build();src.focus();});
+  src.addEventListener('input',build); round.addEventListener('change',build);
+
+  const saved=store.get('shift.src');
+  src.value = saved!=null ? saved : SAMPLE;
+  const sr=store.get('shift.round'); if(sr) round.value=sr;
+  build();
+})();
+</script>
