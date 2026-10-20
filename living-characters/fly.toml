@@ -1,0 +1,26 @@
+# fly.io deployment (one small always-on machine + a 1GB volume for SQLite)
+#   fly launch --no-deploy   (uses this file)
+#   fly volumes create lc_data --size 1 --region nrt
+#   fly secrets set ANTHROPIC_API_KEY=... TELEGRAM_BOT_TOKEN=... ALLOWED_CHAT_ID=... ADMIN_TOKEN=... ADMIN_BOT_TOKEN=... ADMIN_CHAT_IDS=...
+#   fly deploy
+app = "living-characters"
+primary_region = "nrt"
+
+[build]
+
+[env]
+  TZ = "Asia/Seoul"
+  DB_PATH = "/app/data/living.db"
+  ALLOW_FAST_FORWARD = "false"
+  TICK_INTERVAL_SEC = "120"
+
+[mounts]
+  source = "lc_data"
+  destination = "/app/data"
+
+# No public HTTP service: the admin API stays private. Reach it with
+#   fly proxy 8787:8787   then   ADMIN_URL=http://127.0.0.1:8787 npm run admin -- status
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"
+

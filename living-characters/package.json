@@ -1,0 +1,18 @@
+{
+  "name": "living-characters",
+  "version": "0.1.0",
+  "description": "Autonomous human simulation & messaging system (Telegram) — Family Emergency MVP",
+  "type": "module",
+  "private": true,
+  "engines": { "node": ">=22.13" },
+  "scripts": {
+    "start": "node --no-warnings=ExperimentalWarning src/main.js",
+    "dev": "node --no-warnings=ExperimentalWarning --watch src/main.js",
+    "test": "node --no-warnings=ExperimentalWarning --test test/*.test.js",
+    "admin": "node --no-warnings=ExperimentalWarning scripts/admin.js",
+    "simulate": "node --no-warnings=ExperimentalWarning scripts/simulate-offline.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.135.0"
+  }
+}
